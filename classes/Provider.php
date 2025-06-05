@@ -10,16 +10,18 @@ class Provider {
     
     public function getAllProviders($limit = 50, $offset = 0, $search = '') {
         try {
-            $sql = "SELECT hp.*, COUNT(a.Appt_ID) as total_appointments 
-                    FROM healthcareprovider hp 
-                    LEFT JOIN appointment a ON hp.Prov_ID = a.Prov_ID 
-                    WHERE hp.Prov_Name LIKE ? OR hp.Prov_Spec LIKE ? 
-                    GROUP BY hp.Prov_ID 
-                    ORDER BY hp.Prov_Name ASC 
+            $sql = "SELECT p.*, COUNT(a.Appt_ID) as total_appointments 
+                    FROM providers p 
+                    LEFT JOIN appointments a ON p.Prov_ID = a.Prov_ID 
+                    WHERE p.Prov_Name LIKE ? OR p.Prov_Spec LIKE ? 
+                    GROUP BY p.Prov_ID 
+                    ORDER BY p.Prov_Name ASC 
                     LIMIT ? OFFSET ?";
             
             $searchTerm = "%{$search}%";
-            return $this->db->fetchAll($sql, [$searchTerm, $searchTerm, $limit, $offset]);
+            $stmt = $this->db->getConnection()->prepare($sql);
+            $stmt->execute([$searchTerm, $searchTerm, $limit, $offset]);
+            return $stmt->fetchAll();
         } catch (Exception $e) {
             error_log("Get all providers error: " . $e->getMessage());
             return [];
@@ -28,8 +30,10 @@ class Provider {
     
     public function getProviderById($id) {
         try {
-            $sql = "SELECT * FROM healthcareprovider WHERE Prov_ID = ?";
-            return $this->db->fetch($sql, [$id]);
+            $sql = "SELECT * FROM providers WHERE Prov_ID = ?";
+            $stmt = $this->db->getConnection()->prepare($sql);
+            $stmt->execute([$id]);
+            return $stmt->fetch();
         } catch (Exception $e) {
             error_log("Get provider by ID error: " . $e->getMessage());
             return null;

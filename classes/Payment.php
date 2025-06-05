@@ -10,8 +10,9 @@ class Payment {
     
     public function createPayment($data) {
         try {
-            $sql = "INSERT INTO payment (Pat_ID, Amount, PaymentMeth_ID, PaymentStat_ID) VALUES (?, ?, ?, ?)";
-            $this->db->execute($sql, [
+            $sql = "INSERT INTO payments (Pat_ID, Amount, PaymentMeth_ID, PaymentStat_ID) VALUES (?, ?, ?, ?)";
+            $stmt = $this->db->getConnection()->prepare($sql);
+            $stmt->execute([
                 $data['patient_id'],
                 $data['amount'],
                 $data['payment_method_id'],
@@ -21,7 +22,7 @@ class Payment {
             return [
                 'success' => true,
                 'message' => 'Payment record created successfully.',
-                'payment_id' => $this->db->lastInsertId()
+                'payment_id' => $this->db->getConnection()->lastInsertId()
             ];
         } catch (Exception $e) {
             error_log("Create payment error: " . $e->getMessage());

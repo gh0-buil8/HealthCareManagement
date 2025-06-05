@@ -18,15 +18,16 @@ class Appointment {
                 return ['success' => false, 'message' => 'Time slot is not available.'];
             }
             
-            $sql = "INSERT INTO appointment (Pat_ID, Prov_ID, DateTime, Status_ID) VALUES (?, ?, ?, ?)";
-            $this->db->execute($sql, [
+            $sql = "INSERT INTO appointments (Pat_ID, Prov_ID, DateTime, Status_ID) VALUES (?, ?, ?, ?)";
+            $stmt = $this->db->getConnection()->prepare($sql);
+            $stmt->execute([
                 $data['patient_id'],
                 $data['provider_id'],
                 $data['datetime'],
                 1 // Scheduled status
             ]);
             
-            $appointmentId = $this->db->lastInsertId();
+            $appointmentId = $this->db->getConnection()->lastInsertId();
             
             $this->db->commit();
             
