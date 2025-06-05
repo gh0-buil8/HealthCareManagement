@@ -7,7 +7,7 @@ define('BASE_URL', 'http://localhost/healthcare_ams/');
 // Database Configuration
 define('DB_HOST', 'localhost');
 define('DB_USERNAME', 'root');
-define('DB_PASSWORD', '');
+define('DB_PASSWORD', 'test1234');
 define('DB_NAME', 'healthcare_ams');
 
 // Email Configuration
