@@ -1,4 +1,5 @@
 <?php
+require_once '../config/constants.php';
 $page_title = 'Provider Dashboard - ' . APP_NAME;
 require_once '../middleware/auth.php';
 require_once '../middleware/role_check.php';
