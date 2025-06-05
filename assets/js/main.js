@@ -138,7 +138,7 @@ class HealthcareAMS {
     setupTableInteractions() {
         // Enhanced table functionality
         this.setupTableSorting();
-        this.setupTableFiltering();
+        this.setupTableSearch();
         this.setupTablePagination();
     }
 
@@ -179,6 +179,100 @@ class HealthcareAMS {
         
         // Re-append sorted rows
         rows.forEach(row => tbody.appendChild(row));
+    }
+
+    setupTableSearch() {
+        // Enhanced search functionality for tables
+        const searchInputs = document.querySelectorAll('[data-table-search]');
+        searchInputs.forEach(input => {
+            const targetTable = document.querySelector(input.dataset.tableSearch);
+            if (targetTable) {
+                let timeout;
+                input.addEventListener('input', () => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => {
+                        this.filterTableRows(targetTable, input.value);
+                    }, 300);
+                });
+            }
+        });
+    }
+
+    filterTableRows(table, searchTerm) {
+        const tbody = table.querySelector('tbody');
+        const rows = tbody.querySelectorAll('tr');
+        const term = searchTerm.toLowerCase();
+
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(term) ? '' : 'none';
+        });
+    }
+
+    setupTablePagination() {
+        // Pagination functionality for large tables
+        const paginatedTables = document.querySelectorAll('[data-paginated]');
+        paginatedTables.forEach(table => {
+            this.initializePagination(table);
+        });
+    }
+
+    initializePagination(table) {
+        const rowsPerPage = parseInt(table.dataset.rowsPerPage) || 10;
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        
+        if (rows.length <= rowsPerPage) return;
+
+        // Create pagination controls
+        const paginationContainer = document.createElement('div');
+        paginationContainer.className = 'pagination-container mt-3 d-flex justify-content-between align-items-center';
+        
+        const totalPages = Math.ceil(rows.length / rowsPerPage);
+        let currentPage = 1;
+
+        const showPage = (page) => {
+            const start = (page - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            
+            rows.forEach((row, index) => {
+                row.style.display = (index >= start && index < end) ? '' : 'none';
+            });
+            
+            currentPage = page;
+            updatePaginationControls();
+        };
+
+        const updatePaginationControls = () => {
+            const info = paginationContainer.querySelector('.pagination-info');
+            const start = (currentPage - 1) * rowsPerPage + 1;
+            const end = Math.min(currentPage * rowsPerPage, rows.length);
+            info.textContent = `Showing ${start}-${end} of ${rows.length} entries`;
+            
+            const prevBtn = paginationContainer.querySelector('.btn-prev');
+            const nextBtn = paginationContainer.querySelector('.btn-next');
+            prevBtn.disabled = currentPage === 1;
+            nextBtn.disabled = currentPage === totalPages;
+        };
+
+        paginationContainer.innerHTML = `
+            <div class="pagination-info"></div>
+            <div class="pagination-controls">
+                <button class="btn btn-sm btn-outline-primary btn-prev me-2">Previous</button>
+                <button class="btn btn-sm btn-outline-primary btn-next">Next</button>
+            </div>
+        `;
+
+        paginationContainer.querySelector('.btn-prev').addEventListener('click', () => {
+            if (currentPage > 1) showPage(currentPage - 1);
+        });
+
+        paginationContainer.querySelector('.btn-next').addEventListener('click', () => {
+            if (currentPage < totalPages) showPage(currentPage + 1);
+        });
+
+        table.parentNode.appendChild(paginationContainer);
+        showPage(1);
     }
 
     setupModalInteractions() {
