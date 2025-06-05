@@ -10,30 +10,18 @@ class User {
     
     public function login($email, $password, $role) {
         try {
-            // Determine table based on role
-            $table = $this->getRoleTable($role);
-            $idField = $this->getRoleIdField($role);
-            $nameField = $this->getRoleNameField($role);
-            $emailField = $this->getRoleEmailField($role);
+            $sql = "SELECT user_id, username, email, password_hash, role, full_name FROM users WHERE email = ? AND role = ?";
+            $user = $this->db->getConnection()->prepare($sql);
+            $user->execute([$email, $role]);
+            $userData = $user->fetch();
             
-            if (!$table) {
-                return ['success' => false, 'message' => 'Invalid role specified.'];
-            }
-            
-            // For now, we'll use a simple password check since the database doesn't have password fields
-            // In a real application, you would have password hashes stored in the database
-            $sql = "SELECT {$idField}, {$nameField}, {$emailField} FROM {$table} WHERE {$emailField} = ?";
-            $user = $this->db->fetch($sql, [$email]);
-            
-            if ($user) {
-                // For demo purposes, accept any password for existing users
-                // In production, you would verify against hashed passwords
+            if ($userData && password_verify($password, $userData['password_hash'])) {
                 return [
                     'success' => true,
-                    'user_id' => $user[$idField],
-                    'user_name' => $user[$nameField],
-                    'user_email' => $user[$emailField],
-                    'user_role' => $role,
+                    'user_id' => $userData['user_id'],
+                    'user_name' => $userData['full_name'],
+                    'user_email' => $userData['email'],
+                    'user_role' => $userData['role'],
                     'message' => 'Login successful.'
                 ];
             } else {
@@ -42,39 +30,64 @@ class User {
             
         } catch (Exception $e) {
             error_log("Login error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Login failed. Please try again.'];
+            return ['success' => false, 'message' => 'Database operation failed.'];
         }
     }
     
     public function register($data) {
         try {
             $role = $data['role'];
-            $table = $this->getRoleTable($role);
-            
-            if (!$table) {
-                return ['success' => false, 'message' => 'Invalid role specified.'];
-            }
             
             // Check if email already exists
-            $emailField = $this->getRoleEmailField($role);
-            $existingUser = $this->db->fetch("SELECT {$emailField} FROM {$table} WHERE {$emailField} = ?", [$data['email']]);
+            $sql = "SELECT 1 FROM users WHERE email = ?";
+            $stmt = $this->db->getConnection()->prepare($sql);
+            $stmt->execute([$data['email']]);
+            $existingUser = $stmt->fetch();
             
             if ($existingUser) {
                 return ['success' => false, 'message' => 'Email address already exists.'];
             }
             
-            // Insert new user
-            if ($role === 'patient') {
-                $sql = "INSERT INTO patient (Pat_Name, Pat_Email, Pat_Phone, Pat_Addr, Pat_DOB) VALUES (?, ?, ?, ?, ?)";
-                $params = [$data['name'], $data['email'], $data['phone'], $data['address'], $data['dob']];
-            } elseif ($role === 'provider') {
-                $sql = "INSERT INTO healthcareprovider (Prov_Name, Prov_Email, Prov_Phone, Prov_Spec) VALUES (?, ?, ?, ?)";
-                $params = [$data['name'], $data['email'], $data['phone'], 'General Practice'];
-            } else {
-                return ['success' => false, 'message' => 'Registration not available for this role.'];
-            }
+            // Hash password
+            $passwordHash = password_hash($data['password'], PASSWORD_DEFAULT);
             
-            $this->db->execute($sql, $params);
+            // Insert into users table
+            $sql = "INSERT INTO users (username, email, password_hash, role, full_name, phone) VALUES (?, ?, ?, ?, ?, ?)";
+            $stmt = $this->db->getConnection()->prepare($sql);
+            $stmt->execute([
+                strtolower(str_replace(' ', '', $data['name'])),
+                $data['email'],
+                $passwordHash,
+                $role,
+                $data['name'],
+                $data['phone'] ?? ''
+            ]);
+            
+            $userId = $this->db->getConnection()->lastInsertId();
+            
+            // Insert into role-specific table
+            if ($role === 'patient') {
+                $sql = "INSERT INTO patients (user_id, Pat_Name, Pat_Email, Pat_Phone, Pat_Address, Pat_DOB) VALUES (?, ?, ?, ?, ?, ?)";
+                $stmt = $this->db->getConnection()->prepare($sql);
+                $stmt->execute([
+                    $userId,
+                    $data['name'],
+                    $data['email'],
+                    $data['phone'] ?? '',
+                    $data['address'] ?? '',
+                    $data['dob'] ?? null
+                ]);
+            } elseif ($role === 'provider') {
+                $sql = "INSERT INTO providers (user_id, Prov_Name, Prov_Email, Prov_Phone, Prov_Spec) VALUES (?, ?, ?, ?, ?)";
+                $stmt = $this->db->getConnection()->prepare($sql);
+                $stmt->execute([
+                    $userId,
+                    $data['name'],
+                    $data['email'],
+                    $data['phone'] ?? '',
+                    $data['specialty'] ?? 'General Practice'
+                ]);
+            }
             
             return ['success' => true, 'message' => 'Registration successful.'];
             
@@ -86,15 +99,20 @@ class User {
     
     public function getUserById($id, $role) {
         try {
-            $table = $this->getRoleTable($role);
-            $idField = $this->getRoleIdField($role);
+            $sql = "SELECT u.*, 
+                    CASE 
+                        WHEN u.role = 'patient' THEN p.Pat_Name
+                        WHEN u.role = 'provider' THEN pr.Prov_Name
+                        ELSE u.full_name
+                    END as display_name
+                    FROM users u
+                    LEFT JOIN patients p ON u.user_id = p.user_id AND u.role = 'patient'
+                    LEFT JOIN providers pr ON u.user_id = pr.user_id AND u.role = 'provider'
+                    WHERE u.user_id = ? AND u.role = ?";
             
-            if (!$table) {
-                return null;
-            }
-            
-            $sql = "SELECT * FROM {$table} WHERE {$idField} = ?";
-            return $this->db->fetch($sql, [$id]);
+            $stmt = $this->db->getConnection()->prepare($sql);
+            $stmt->execute([$id, $role]);
+            return $stmt->fetch();
             
         } catch (Exception $e) {
             error_log("Get user error: " . $e->getMessage());
@@ -104,82 +122,27 @@ class User {
     
     public function updateProfile($id, $role, $data) {
         try {
-            $table = $this->getRoleTable($role);
-            $idField = $this->getRoleIdField($role);
+            // Update users table
+            $sql = "UPDATE users SET full_name = ?, phone = ? WHERE user_id = ?";
+            $stmt = $this->db->getConnection()->prepare($sql);
+            $stmt->execute([$data['name'], $data['phone'], $id]);
             
-            if (!$table) {
-                return ['success' => false, 'message' => 'Invalid role specified.'];
-            }
-            
+            // Update role-specific table
             if ($role === 'patient') {
-                $sql = "UPDATE patient SET Pat_Name = ?, Pat_Phone = ?, Pat_Addr = ? WHERE Pat_ID = ?";
-                $params = [$data['name'], $data['phone'], $data['address'], $id];
+                $sql = "UPDATE patients SET Pat_Name = ?, Pat_Phone = ?, Pat_Address = ? WHERE user_id = ?";
+                $stmt = $this->db->getConnection()->prepare($sql);
+                $stmt->execute([$data['name'], $data['phone'], $data['address'] ?? '', $id]);
             } elseif ($role === 'provider') {
-                $sql = "UPDATE healthcareprovider SET Prov_Name = ?, Prov_Phone = ?, Prov_Spec = ? WHERE Prov_ID = ?";
-                $params = [$data['name'], $data['phone'], $data['specialty'], $id];
-            } else {
-                return ['success' => false, 'message' => 'Profile update not available for this role.'];
+                $sql = "UPDATE providers SET Prov_Name = ?, Prov_Phone = ?, Prov_Spec = ? WHERE user_id = ?";
+                $stmt = $this->db->getConnection()->prepare($sql);
+                $stmt->execute([$data['name'], $data['phone'], $data['specialty'] ?? '', $id]);
             }
-            
-            $this->db->execute($sql, $params);
             
             return ['success' => true, 'message' => 'Profile updated successfully.'];
             
         } catch (Exception $e) {
             error_log("Update profile error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Profile update failed. Please try again.'];
-        }
-    }
-    
-    private function getRoleTable($role) {
-        switch ($role) {
-            case 'patient':
-                return 'patient';
-            case 'provider':
-                return 'healthcareprovider';
-            case 'admin':
-                return 'admin_users'; // This table would need to be created
-            default:
-                return null;
-        }
-    }
-    
-    private function getRoleIdField($role) {
-        switch ($role) {
-            case 'patient':
-                return 'Pat_ID';
-            case 'provider':
-                return 'Prov_ID';
-            case 'admin':
-                return 'Admin_ID';
-            default:
-                return null;
-        }
-    }
-    
-    private function getRoleNameField($role) {
-        switch ($role) {
-            case 'patient':
-                return 'Pat_Name';
-            case 'provider':
-                return 'Prov_Name';
-            case 'admin':
-                return 'Admin_Name';
-            default:
-                return null;
-        }
-    }
-    
-    private function getRoleEmailField($role) {
-        switch ($role) {
-            case 'patient':
-                return 'Pat_Email';
-            case 'provider':
-                return 'Prov_Email';
-            case 'admin':
-                return 'Admin_Email';
-            default:
-                return null;
         }
     }
 }

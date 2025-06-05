@@ -11,15 +11,17 @@ class Patient {
     public function getAllPatients($limit = 50, $offset = 0, $search = '') {
         try {
             $sql = "SELECT p.*, COUNT(a.Appt_ID) as total_appointments 
-                    FROM patient p 
-                    LEFT JOIN appointment a ON p.Pat_ID = a.Pat_ID 
+                    FROM patients p 
+                    LEFT JOIN appointments a ON p.Pat_ID = a.Pat_ID 
                     WHERE p.Pat_Name LIKE ? OR p.Pat_Email LIKE ? 
                     GROUP BY p.Pat_ID 
                     ORDER BY p.Pat_Name ASC 
                     LIMIT ? OFFSET ?";
             
             $searchTerm = "%{$search}%";
-            return $this->db->fetchAll($sql, [$searchTerm, $searchTerm, $limit, $offset]);
+            $stmt = $this->db->getConnection()->prepare($sql);
+            $stmt->execute([$searchTerm, $searchTerm, $limit, $offset]);
+            return $stmt->fetchAll();
         } catch (Exception $e) {
             error_log("Get all patients error: " . $e->getMessage());
             return [];
@@ -28,10 +30,57 @@ class Patient {
     
     public function getPatientById($id) {
         try {
-            $sql = "SELECT * FROM patient WHERE Pat_ID = ?";
-            return $this->db->fetch($sql, [$id]);
+            $sql = "SELECT * FROM patients WHERE Pat_ID = ?";
+            $stmt = $this->db->getConnection()->prepare($sql);
+            $stmt->execute([$id]);
+            return $stmt->fetch();
         } catch (Exception $e) {
             error_log("Get patient by ID error: " . $e->getMessage());
+            return null;
+        }
+    }
+    
+    public function getPatientDetailsWithAppointments($id) {
+        try {
+            // Get patient details
+            $patientSql = "SELECT * FROM patients WHERE Pat_ID = ?";
+            $stmt = $this->db->getConnection()->prepare($patientSql);
+            $stmt->execute([$id]);
+            $patient = $stmt->fetch();
+            
+            if (!$patient) {
+                return null;
+            }
+            
+            // Get patient's appointments with provider details
+            $appointmentsSql = "SELECT a.*, p.Prov_Name, p.Prov_Spec, s.Status_Descr, s.color_code
+                               FROM appointments a
+                               JOIN providers p ON a.Prov_ID = p.Prov_ID
+                               JOIN appointment_status s ON a.Status_ID = s.Status_ID
+                               WHERE a.Pat_ID = ?
+                               ORDER BY a.DateTime DESC";
+            $stmt = $this->db->getConnection()->prepare($appointmentsSql);
+            $stmt->execute([$id]);
+            $appointments = $stmt->fetchAll();
+            
+            // Get payment history
+            $paymentsSql = "SELECT pay.*, pm.MethodName, ps.Status_Descr as payment_status
+                           FROM payments pay
+                           LEFT JOIN payment_methods pm ON pay.PaymentMeth_ID = pm.PaymentMeth_ID
+                           LEFT JOIN payment_status ps ON pay.PaymentStat_ID = ps.PaymentStat_ID
+                           WHERE pay.Pat_ID = ?
+                           ORDER BY pay.payment_date DESC";
+            $stmt = $this->db->getConnection()->prepare($paymentsSql);
+            $stmt->execute([$id]);
+            $payments = $stmt->fetchAll();
+            
+            return [
+                'patient' => $patient,
+                'appointments' => $appointments,
+                'payments' => $payments
+            ];
+        } catch (Exception $e) {
+            error_log("Get patient details with appointments error: " . $e->getMessage());
             return null;
         }
     }
