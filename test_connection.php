@@ -29,7 +29,7 @@ try {
     echo "You can now use the authentication system.";
     
 } catch (PDOException $e) {
-    echo "❌ Database connection failed: " . $e->getMessage() . "<br>";
+    echo " Database connection failed: " . $e->getMessage() . "<br>";
     echo "<br>Please check:<br>";
     echo "1. XAMPP MySQL service is running<br>";
     echo "2. MySQL password is 'test1234' for root user<br>";

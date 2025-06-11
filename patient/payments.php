@@ -1,4 +1,5 @@
 <?php
+require_once '../config/config.php';
 $page_title = 'My Payments - ' . APP_NAME;
 require_once '../middleware/auth.php';
 require_once '../middleware/role_check.php';
@@ -13,7 +14,7 @@ $error_message = '';
 $success_message = '';
 
 // Get payments
-$payments = $payment->getPatientPayments($user['id'], 50);
+$payments = $payment->getPatientPayments($user['user_id'], 50);
 $paymentMethods = $payment->getPaymentMethods();
 
 // Calculate totals

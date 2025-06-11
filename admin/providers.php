@@ -1,5 +1,5 @@
 <?php
-require_once '../config/constants.php';
+require_once '../config/config.php';
 $page_title = 'Manage Providers - ' . APP_NAME;
 require_once '../middleware/auth.php';
 require_once '../middleware/role_check.php';

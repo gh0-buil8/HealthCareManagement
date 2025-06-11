@@ -1,5 +1,5 @@
 <?php
-require_once '../config/constants.php';
+require_once '../config/config.php';
 $page_title = 'Provider Dashboard - ' . APP_NAME;
 require_once '../middleware/auth.php';
 require_once '../middleware/role_check.php';
@@ -13,9 +13,9 @@ $appointment = new Appointment();
 $provider = new Provider();
 
 // Get dashboard data
-$todaysAppointments = $appointment->getProviderAppointments($user['id'], date('Y-m-d'), 20);
-$upcomingAppointments = $appointment->getProviderAppointments($user['id'], null, 10);
-$providerStats = $provider->getProviderStats($user['id']);
+$todaysAppointments = $appointment->getProviderAppointments($user['user_id'], date('Y-m-d'), 20);
+$upcomingAppointments = $appointment->getProviderAppointments($user['user_id'], null, 10);
+$providerStats = $provider->getProviderStats($user['user_id']);
 
 require_once '../includes/header.php';
 ?>
@@ -25,7 +25,7 @@ require_once '../includes/header.php';
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h1 class="h3 mb-0">Welcome back, Dr. <?php echo htmlspecialchars($user['name']); ?>!</h1>
+                    <h1 class="h3 mb-0">Welcome back, Dr. <?php echo htmlspecialchars($user['user_name']); ?>!</h1>
                     <p class="text-muted mb-0">Manage your appointments and patient care</p>
                 </div>
                 <div>
@@ -53,7 +53,7 @@ require_once '../includes/header.php';
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <h6 class="card-title text-muted mb-0">Today's Appointments</h6>
-                            <h3 class="card-text mb-0"><?php echo $providerStats['todays_appointments']; ?></h3>
+                            <h3 class="card-text mb-0"><?php echo $providerStats['todays_appointments'] ?? 0; ?></h3>
                         </div>
                     </div>
                 </div>
@@ -71,7 +71,7 @@ require_once '../includes/header.php';
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <h6 class="card-title text-muted mb-0">Completed</h6>
-                            <h3 class="card-text mb-0"><?php echo $providerStats['completed_appointments']; ?></h3>
+                            <h3 class="card-text mb-0"><?php echo $providerStats['completed_appointments'] ?? 0; ?></h3>
                         </div>
                     </div>
                 </div>
@@ -89,7 +89,7 @@ require_once '../includes/header.php';
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <h6 class="card-title text-muted mb-0">Pending</h6>
-                            <h3 class="card-text mb-0"><?php echo $providerStats['pending_appointments']; ?></h3>
+                            <h3 class="card-text mb-0"><?php echo $providerStats['pending_appointments'] ?? 0; ?></h3>
                         </div>
                     </div>
                 </div>
@@ -107,7 +107,7 @@ require_once '../includes/header.php';
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <h6 class="card-title text-muted mb-0">Total Appointments</h6>
-                            <h3 class="card-text mb-0"><?php echo $providerStats['total_appointments']; ?></h3>
+                            <h3 class="card-text mb-0"><?php echo $providerStats['total_appointments'] ?? 0; ?></h3>
                         </div>
                     </div>
                 </div>

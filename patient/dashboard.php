@@ -15,15 +15,15 @@ $payment = new Payment();
 $notification = new Notification();
 
 // Get dashboard data
-$upcomingAppointments = $appointment->getPatientAppointments($user['id'], 5);
-$recentPayments = $payment->getPatientPayments($user['id'], 5);
-$recentNotifications = $notification->getPatientNotifications($user['id'], 5);
+$upcomingAppointments = $appointment->getPatientAppointments($user['user_id'], 5);
+$recentPayments = $payment->getPatientPayments($user['user_id'], 5);
+$recentNotifications = $notification->getPatientNotifications($user['user_id'], 5);
 
 // Get stats
-$totalAppointments = count($appointment->getPatientAppointments($user['id'], 100));
-$totalPaid = array_sum(array_column($payment->getPatientPayments($user['id'], 100), 'Amount'));
-$pendingPayments = array_sum(array_filter(array_column($payment->getPatientPayments($user['id'], 100), 'Amount'), function($payment) {
-    return $payment['Status_Descr'] === 'Pending';
+$totalAppointments = count($appointment->getPatientAppointments($user['user_id'], 100));
+$totalPaid = array_sum(array_column($payment->getPatientPayments($user['user_id'], 100), 'amount'));
+$pendingPayments = array_sum(array_filter($payment->getPatientPayments($user['user_id'], 100), function($payment) {
+    return $payment['status_descr'] === 'Pending';
 }));
 
 require_once '../includes/header.php';
@@ -34,7 +34,7 @@ require_once '../includes/header.php';
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h1 class="h3 mb-0">Welcome back, <?php echo htmlspecialchars($user['name']); ?>!</h1>
+                    <h1 class="h3 mb-0">Welcome back, <?php echo htmlspecialchars($user['user_name']); ?>!</h1>
                     <p class="text-muted mb-0">Manage your healthcare appointments and payments</p>
                 </div>
                 <div>
@@ -230,3 +230,4 @@ require_once '../includes/header.php';
 </div>
 
 <?php require_once '../includes/footer.php'; ?>
+

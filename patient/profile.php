@@ -1,4 +1,5 @@
 <?php
+require_once '../config/config.php';
 $page_title = 'My Profile - ' . APP_NAME;
 require_once '../middleware/auth.php';
 require_once '../middleware/role_check.php';
@@ -13,7 +14,7 @@ $error_message = '';
 $success_message = '';
 
 // Get current user data
-$userData = $user_obj->getUserById($user['id'], $user['role']);
+$userData = $user_obj->getUserById($user['user_id'], $user['user_role']);
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

@@ -1,4 +1,5 @@
 <?php
+require_once '../config/config.php';
 $page_title = 'Schedule - ' . APP_NAME;
 require_once '../middleware/auth.php';
 require_once '../middleware/role_check.php';
@@ -16,7 +17,7 @@ $endOfWeek = date('Y-m-d', strtotime('sunday this week'));
 $weeklyAppointments = [];
 for ($i = 0; $i < 7; $i++) {
     $date = date('Y-m-d', strtotime($startOfWeek . " +{$i} days"));
-    $weeklyAppointments[$date] = $appointment->getProviderAppointments($user['id'], $date, 50);
+    $weeklyAppointments[$date] = $appointment->getProviderAppointments($user['user_id'], $date, 50);
 }
 
 require_once '../includes/header.php';

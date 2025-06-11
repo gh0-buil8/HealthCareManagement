@@ -1,4 +1,5 @@
 <?php
+require_once '../config/config.php';
 $page_title = 'Appointments - ' . APP_NAME;
 require_once '../middleware/auth.php';
 require_once '../middleware/role_check.php';
@@ -36,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Build filters for query
 $filters = [
-    'provider_id' => $user['id']
+    'provider_id' => $user['user_id']
 ];
 
 if ($date_filter) {

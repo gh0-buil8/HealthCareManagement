@@ -45,8 +45,9 @@ class Appointment {
     
     public function updateAppointment($id, $data) {
         try {
-            $sql = "UPDATE appointment SET DateTime = ?, Status_ID = ? WHERE Appt_ID = ?";
-            $this->db->execute($sql, [
+            $sql = "UPDATE appointments SET DateTime = ?, Status_ID = ? WHERE Appt_ID = ?";
+            $stmt = $this->db->getConnection()->prepare($sql);
+            $stmt->execute([
                 $data['datetime'],
                 $data['status_id'],
                 $id
@@ -66,8 +67,9 @@ class Appointment {
                 return ['success' => false, 'message' => 'You do not have permission to cancel this appointment.'];
             }
             
-            $sql = "UPDATE appointment SET Status_ID = ? WHERE Appt_ID = ?";
-            $this->db->execute($sql, [3, $id]); // 3 = Cancelled status
+            $sql = "UPDATE appointments SET Status_ID = ? WHERE Appt_ID = ?";
+            $stmt = $this->db->getConnection()->prepare($sql);
+            $stmt->execute([6, $id]); // 6 = Cancelled status
             
             return ['success' => true, 'message' => 'Appointment cancelled successfully.'];
         } catch (Exception $e) {

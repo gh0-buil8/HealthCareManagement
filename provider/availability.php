@@ -1,4 +1,5 @@
 <?php
+require_once '../config/config.php';
 $page_title = 'Availability - ' . APP_NAME;
 require_once '../middleware/auth.php';
 require_once '../middleware/role_check.php';
@@ -13,7 +14,7 @@ $error_message = '';
 $success_message = '';
 
 // Get current availability
-$availability = $provider->getProviderAvailability($user['id']);
+$availability = $provider->getProviderAvailability($user['user_id']);
 $currentAvailability = $availability['Prov_Avail'] ?? '';
 
 // Handle form submission
@@ -23,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($availability_text)) {
         $error_message = 'Please enter your availability information.';
     } else {
-        $result = $provider->updateProviderAvailability($user['id'], $availability_text);
+        $result = $provider->updateProviderAvailability($user['user_id'], $availability_text);
         
         if ($result['success']) {
             $success_message = $result['message'];
