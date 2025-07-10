@@ -1,4 +1,5 @@
 <?php
+require_once '../config/config.php';
 $page_title = 'Book Appointment - ' . APP_NAME;
 require_once '../middleware/auth.php';
 require_once '../middleware/role_check.php';

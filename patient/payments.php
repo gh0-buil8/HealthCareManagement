@@ -325,25 +325,30 @@ function processPayment() {
         return;
     }
     
-    // In a real application, you would process the payment through a payment gateway
-    // For now, we'll just show a success message
+    if (!formData.get('card_number') || !formData.get('expiry') || !formData.get('cvv')) {
+        alert('Please fill in all card details.');
+        return;
+    }
     
-    fetch('../api/payments.php', {
+    // Process the payment
+    const paymentData = {
+        action: 'process_payment',
+        payment_id: formData.get('payment_id'),
+        payment_method: formData.get('payment_method'),
+        card_details: {
+            number: formData.get('card_number'),
+            expiry: formData.get('expiry'),
+            cvv: formData.get('cvv'),
+            name: formData.get('cardholder_name')
+        }
+    };
+    
+    fetch('../api/process_payment.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            action: 'process_payment',
-            payment_id: formData.get('payment_id'),
-            payment_method: formData.get('payment_method'),
-            card_details: {
-                number: formData.get('card_number'),
-                expiry: formData.get('expiry'),
-                cvv: formData.get('cvv'),
-                name: formData.get('cardholder_name')
-            }
-        })
+        body: JSON.stringify(paymentData)
     })
     .then(response => response.json())
     .then(data => {
@@ -352,7 +357,7 @@ function processPayment() {
             bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
             location.reload();
         } else {
-            alert('Payment failed: ' + data.message);
+            alert('Payment failed: ' + (data.message || 'Unknown error'));
         }
     })
     .catch(error => {

@@ -20,12 +20,12 @@ $currentAvailability = $availability['Prov_Avail'] ?? '';
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $availability_text = trim($_POST['availability'] ?? '');
-    
+
     if (empty($availability_text)) {
         $error_message = 'Please enter your availability information.';
     } else {
         $result = $provider->updateProviderAvailability($user['user_id'], $availability_text);
-        
+
         if ($result['success']) {
             $success_message = $result['message'];
             $currentAvailability = $availability_text;
@@ -66,7 +66,7 @@ require_once '../includes/header.php';
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     <?php endif; ?>
-                    
+
                     <?php if ($success_message): ?>
                         <div class="alert alert-success alert-dismissible fade show" role="alert">
                             <i class="fas fa-check-circle me-2"></i>
@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Template button functionality
     const templateButtons = document.querySelectorAll('.template-btn');
     const availabilityTextarea = document.getElementById('availability');
-    
+
     templateButtons.forEach(button => {
         button.addEventListener('click', function() {
             const template = this.dataset.template;

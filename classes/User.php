@@ -87,6 +87,9 @@ class User {
                     $data['phone'] ?? '',
                     $data['specialty'] ?? 'General Practice'
                 ]);
+            } elseif ($role === 'admin') {
+                // For admin users, we don't need a separate table entry
+                // They can manage the system using the main users table data
             }
             
             return ['success' => true, 'message' => 'Registration successful.'];

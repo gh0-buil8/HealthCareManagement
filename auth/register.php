@@ -45,6 +45,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Date of birth is required for patients.';
     }
     
+    if (!in_array($role, ['patient', 'provider', 'admin'])) {
+        $errors[] = 'Invalid account type selected.';
+    }
+    
     if (!empty($errors)) {
         $error_message = implode('<br>', $errors);
     } else {
@@ -166,6 +170,7 @@ $page_title = 'Register - ' . APP_NAME;
                                 <select class="form-select" id="role" name="role" required>
                                     <option value="patient" <?php echo (isset($_POST['role']) && $_POST['role'] === 'patient') ? 'selected' : ''; ?>>Patient</option>
                                     <option value="provider" <?php echo (isset($_POST['role']) && $_POST['role'] === 'provider') ? 'selected' : ''; ?>>Healthcare Provider</option>
+                                    <option value="admin" <?php echo (isset($_POST['role']) && $_POST['role'] === 'admin') ? 'selected' : ''; ?>>Administrator</option>
                                 </select>
                             </div>
                         </div>

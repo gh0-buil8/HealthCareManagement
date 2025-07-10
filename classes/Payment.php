@@ -166,21 +166,54 @@ class Payment {
     
     public function processPayment($paymentId, $transactionData) {
         try {
-            $this->db->beginTransaction();
+            $this->db->getConnection()->beginTransaction();
             
             // Update payment status to paid
             $this->updatePaymentStatus($paymentId, 2); // 2 = Paid status
             
-            // Log transaction details (you would implement transaction logging table)
-            // $this->logTransaction($paymentId, $transactionData);
+            // Log transaction details
+            $this->logTransaction($paymentId, $transactionData);
             
-            $this->db->commit();
+            $this->db->getConnection()->commit();
             
             return ['success' => true, 'message' => 'Payment processed successfully.'];
         } catch (Exception $e) {
-            $this->db->rollback();
+            $this->db->getConnection()->rollback();
             error_log("Process payment error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Payment processing failed.'];
+        }
+    }
+    
+    public function logTransaction($paymentId, $transactionData) {
+        try {
+            $sql = "INSERT INTO payment_transactions (payment_id, transaction_id, card_last_four, payment_method, processed_at) 
+                    VALUES (?, ?, ?, ?, NOW())";
+            $stmt = $this->db->getConnection()->prepare($sql);
+            $stmt->execute([
+                $paymentId,
+                $transactionData['transaction_id'] ?? '',
+                $transactionData['card_last_four'] ?? '',
+                $transactionData['payment_method'] ?? ''
+            ]);
+            
+            return ['success' => true];
+        } catch (Exception $e) {
+            error_log("Log transaction error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Failed to log transaction.'];
+        }
+    }
+    
+    public function getPatientIdByUserId($userId) {
+        try {
+            $sql = "SELECT Pat_ID FROM patients WHERE user_id = ?";
+            $stmt = $this->db->getConnection()->prepare($sql);
+            $stmt->execute([$userId]);
+            $result = $stmt->fetch();
+            
+            return $result ? $result['Pat_ID'] : null;
+        } catch (Exception $e) {
+            error_log("Get patient ID by user ID error: " . $e->getMessage());
+            return null;
         }
     }
     

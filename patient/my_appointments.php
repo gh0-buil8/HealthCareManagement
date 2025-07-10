@@ -1,4 +1,5 @@
 <?php
+require_once '../config/config.php';
 $page_title = 'My Appointments - ' . APP_NAME;
 require_once '../middleware/auth.php';
 require_once '../middleware/role_check.php';
@@ -18,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $appointment_id = $_POST['appointment_id'] ?? '';
     
     if ($action === 'cancel' && $appointment_id) {
-        $result = $appointment->cancelAppointment($appointment_id, $user['id'], $user['role']);
+        $result = $appointment->cancelAppointment($appointment_id, $user['user_id'], $user['role']);
         if ($result['success']) {
             $success_message = $result['message'];
         } else {
@@ -27,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'reschedule' && $appointment_id) {
         $new_datetime = $_POST['new_datetime'] ?? '';
         if ($new_datetime) {
-            $result = $appointment->rescheduleAppointment($appointment_id, $new_datetime, $user['id'], $user['role']);
+            $result = $appointment->rescheduleAppointment($appointment_id, $new_datetime, $user['user_id'], $user['role']);
             if ($result['success']) {
                 $success_message = $result['message'];
             } else {
@@ -38,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Get appointments
-$appointments = $appointment->getPatientAppointments($user['id'], 50);
+$appointments = $appointment->getPatientAppointments($user['user_id'], 50);
 
 require_once '../includes/header.php';
 ?>
